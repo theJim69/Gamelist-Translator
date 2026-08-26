@@ -1,6 +1,6 @@
 # Gamelist-Translator
 
-Translate game descriptions in `gamelist.xml` files from EmulationStation / RetroBat using Google Translate.
+Translate game descriptions in `gamelist.xml` files from EmulationStation / RetroBat using Google Translate or DeepL.
 
 This project is a fork of the original **Gamelist-Translator** script created by **Schmurtz**.
 
@@ -8,6 +8,11 @@ The original project and its historical version information have been preserved,
 
 ## Features
 
+- Interactive translation service selection
+- Support for:
+  - Google Translate
+  - DeepL
+- DeepL API integration
 - Interactive source language selection
 - Interactive target language selection
 - Support for:
@@ -35,6 +40,33 @@ The original project and its historical version information have been preserved,
 - Automatic removal of the progress file after a successful complete translation
 - Final translation summary
 - Original descriptions are kept if a translation fails
+
+## Translation service selection
+
+The translator supports two translation services:
+
+```text
+========================================
+Select translation service
+========================================
+1. Google Translate
+2. DeepL
+Selection:
+```
+
+### Google Translate
+
+Google Translate requests are performed through the Windows `curl.exe` command-line tool.
+
+The translator checks the HTTP status returned by Google before processing the response and explicitly detects HTTP `429` (`Too Many Requests`).
+
+### DeepL
+
+DeepL can be selected as an alternative translation service.
+
+DeepL requires a valid DeepL API key. The API key is requested when DeepL is selected and is not stored in the translation cache or progress file.
+
+The selected translation service is also stored in the progress information. This prevents a translation from being resumed with a different service.
 
 ## Interactive language selection
 
@@ -101,7 +133,7 @@ The original file is therefore preserved before translation begins.
 
 The translator maintains a local cache of completed translations.
 
-This prevents the same description from being sent to Google Translate again when the same source language, target language and text are encountered.
+This prevents the same description from being sent to the selected translation service again when the same translation service, source language, target language and text are encountered.
 
 The cache is stored as:
 
@@ -110,6 +142,8 @@ The cache is stored as:
 ```
 
 The cache is generated automatically and should not normally be committed to the Git repository.
+
+The cache works with both Google Translate and DeepL. Cached translations are associated with the selected translation service, source language, target language and original text.
 
 ## Google Translate and curl.exe
 
@@ -241,6 +275,21 @@ The following information is not intentionally translated:
 - metadata
 - other game fields
 
+## Version 2.1.0
+
+Version 2.1.0 introduces DeepL as an alternative translation service and significantly improves the reliability of Google Translate requests.
+
+Main changes:
+
+- Added Google Translate and DeepL service selection.
+- Added DeepL API support.
+- Added reliable Google Translate requests through `curl.exe`.
+- Added HTTP status detection and HTTP 429 handling for Google Translate.
+- Added progress saving and automatic resume.
+- Improved translation cache handling.
+- Improved handling of Google Translate responses split into multiple segments.
+- Progress files are automatically removed after a successful complete translation.
+
 ## Original project
 
 This project is a fork of the original **Gamelist-Translator** created by **Schmurtz**.
@@ -265,11 +314,13 @@ The original authorship and historical information are preserved in the PowerShe
 
 This project is currently being developed as a PowerShell-based fork.
 
+The current version supports both Google Translate and DeepL, with translation caching, progress saving, automatic resume and safe handling of Google HTTP 429 rate limiting.
+
 The current development priorities are:
 
-1. Stabilize the PowerShell version.
-2. Test with real RetroBat `gamelist.xml` files.
-3. Verify translation reliability on large collections.
+1. Continue testing with real RetroBat `gamelist.xml` files.
+2. Verify translation reliability on large collections.
+3. Improve translation service handling and error reporting.
 4. Define the final translation workflow and behavior.
 5. Consider a future C# implementation.
 
@@ -279,6 +330,6 @@ Always keep a backup of your original `gamelist.xml` files.
 
 Translation quality depends on the translation service used and the original descriptions.
 
-This project is not affiliated with RetroBat, EmulationStation or Google.
+This project is not affiliated with RetroBat, EmulationStation, Google or DeepL.
 
 GitHub repository: https://github.com/theJim69/Gamelist-Translator
