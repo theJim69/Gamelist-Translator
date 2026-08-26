@@ -22,12 +22,17 @@ The original project and its historical version information have been preserved,
 - XML validation before processing
 - UTF-8 / BOM handling
 - Automatic backup of the original `gamelist.xml`
+- Google Translate integration using `curl.exe`
+- Complete translation response reconstruction when Google splits a description into multiple segments
 - Translation cache to avoid translating the same description multiple times
 - Empty descriptions are automatically ignored
-- HTTP 429 handling
+- HTTP status detection for Google Translate requests
+- HTTP 429 (`Too Many Requests`) detection
+- Safe stop when Google rate-limits requests
 - Progress saving during translation
 - Resume after an interruption
 - Periodic progress saving
+- Automatic removal of the progress file after a successful complete translation
 - Final translation summary
 - Original descriptions are kept if a translation fails
 
@@ -106,13 +111,62 @@ The cache is stored as:
 
 The cache is generated automatically and should not normally be committed to the Git repository.
 
+## Google Translate and curl.exe
+
+Google Translate requests are performed through the Windows `curl.exe` command-line tool.
+
+This avoids compatibility problems encountered with PowerShell's native HTTP request handling and provides reliable access to the Google Translate endpoint.
+
+The translator also retrieves the HTTP status code returned by Google for every request.
+
+Example:
+
+```text
+Google request via curl.exe...
+```
+
+The HTTP status is checked before processing the response.
+
+Successful requests return HTTP `200`.
+
+If Google returns HTTP `429` (`Too Many Requests`), the translator stops the translation safely instead of continuing to send requests.
+
+The current progress and translation cache are saved before stopping.
+
+This protects large translation jobs from losing their progress when Google temporarily rate-limits requests.
+
+## HTTP 429 handling
+
+Google Translate may temporarily reject requests with HTTP 429 (`Too Many Requests`).
+
+The translator detects the HTTP status returned by Google through `curl.exe`.
+
+When HTTP 429 is detected:
+
+1. The current translation is stopped.
+2. The current progress is saved.
+3. The translation cache is saved.
+4. The XML file is saved.
+5. The progress file is kept so the translation can be resumed later.
+
+Example:
+
+```text
+Google Translate returned HTTP 429 (Too Many Requests).
+Google Translate is rate limiting requests.
+Translation will stop to protect current progress.
+Progress saved before stopping.
+```
+
+When the translation completes successfully, the progress file is automatically removed.
+
+The original description is always kept when a translation cannot be completed.
+
 ## Progress and resume
 
 For large collections, translation can take a significant amount of time.
 
-The translator periodically saves its progress.
-
-If the process is interrupted, it can resume from the last saved position when the same `gamelist.xml` is processed again.
+The translator periodically saves its progress and translation cache.
 
 The progress file is:
 
@@ -120,22 +174,26 @@ The progress file is:
 .gamelist-translator-progress.json
 ```
 
+The cache file is:
+
+```text
+.gamelist-translator-cache.json
+```
+
+If the process is interrupted or Google returns HTTP 429, the progress file is kept.
+
+When the script is launched again with the same `gamelist.xml`, source language and target language, the translator automatically resumes from the saved position.
+
 Example:
 
 ```text
 Previous progress found.
-Resume from game index : 5
+Resume from game index : 10
 ```
 
-This is particularly useful when working with large RetroBat collections.
+After a complete successful translation, the progress file is automatically deleted.
 
-## HTTP 429 handling
-
-Google Translate may temporarily reject requests with HTTP 429 (`Too Many Requests`).
-
-The translator detects this situation and protects the current progress by saving the cache and XML before stopping when necessary.
-
-The original description is kept if a translation cannot be completed.
+The translation cache is retained for future use.
 
 ## Empty descriptions
 
@@ -222,3 +280,5 @@ Always keep a backup of your original `gamelist.xml` files.
 Translation quality depends on the translation service used and the original descriptions.
 
 This project is not affiliated with RetroBat, EmulationStation or Google.
+
+GitHub repository: https://github.com/theJim69/Gamelist-Translator
